@@ -1,27 +1,46 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+import HomePage from '@/components/HomePage.vue'
+import Login from '@/views/Login.vue'
+import Home from '@/views/home/Home.vue'
 
 Vue.use(VueRouter)
 
 const routes = [
   {
     path: '/',
-    name: 'home',
-    component: HomeView
+    redirect: '/login'
   },
   {
-    path: '/about',
-    name: 'about',
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '../views/AboutView.vue')
-  }
+    path: '/login',
+    component: Login,
+  },
+  // {
+  //   path: '/home',
+  //   component: HomePage,
+  //   meta: { requiresAuth: true } //添加元数据，表示需要身份验证 ,
+  // },
+  {
+    path: '/homes',
+    component: Home,
+    meta: { requiresAuth: true }  //添加元数据，表示需要身份验证 ,
+  },
+
 ]
 
 const router = new VueRouter({
-  routes
+  routes,
+  mode: 'history'
 })
+
+router.beforeEach((to, from, next) => {
+  const isAuthenticated = !!localStorage.getItem('token');  // 检查是否有 token
+  if (to.matched.some(record => record.meta.requiresAuth) && !isAuthenticated) {
+    next({ path: '/login' });  // 如果没有 token，重定向到登录页面
+  } else {
+    next(); // 继续访问
+  }
+});
+
 
 export default router

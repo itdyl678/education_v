@@ -1,17 +1,24 @@
-import Vue from 'vue'
-import Vuex from 'vuex'
+// src/store/index.js
+import Vue from 'vue';
+import Vuex from 'vuex';
 
-Vue.use(Vuex)
+Vue.use(Vuex);
 
 export default new Vuex.Store({
   state: {
-  },
-  getters: {
+    username: ''
   },
   mutations: {
+    setUserName(state, username) {
+      state.username = username;
+    }
   },
   actions: {
+    setUsername({ commit }, username) {
+      commit('setUserName', username);
+    }
   },
-  modules: {
+  getters: {
+    getUsername: state => state.username
   }
-})
+});
