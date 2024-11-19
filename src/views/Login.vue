@@ -101,7 +101,7 @@ export default {
                     console.log("############" + username);
 
                     if (token) {
-                        localStorage.setItem('token', token); // 保存 token 到 localStorage
+                        sessionStorage.setItem('token', token); // 保存 token 到 sessionStorage
                         this.setUsername(username)  //更新Vuex状态
                     } else {
                         console.error('Token is undefined or null'); // 处理 token 为 undefined 的情况

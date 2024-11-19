@@ -65,7 +65,7 @@ export default {
                 cancelButtonText: '取消',
                 type: 'warning'
             }).then(() => {
-                localStorage.removeItem('token');  // 清除存储的 token
+                sessionStorage.removeItem('token');  // 清除存储的 token
                 this.$router.push('/login')
             }).catch(() => {
                 this.$message({

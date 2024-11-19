@@ -51,6 +51,11 @@
 <script>
 export default {
     name: 'Sidebars',
+    data() {
+        return {
+            activeIndex: '1',
+        };
+    },
     methods: {
         handleSelect(index) {
             this.$emit('select', index); // 触发选中事件

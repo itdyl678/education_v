@@ -9,8 +9,7 @@
         <el-button type="primary" @click="handleAdd" style="margin-bottom: 10px;">添加用户</el-button>
 
         <!-- 用户信息表格 -->
-        <el-table :data="filteredUsers.slice((currentPage - 1) * pageSize, currentPage * pageSize)"
-            style="width: 100%; max-width: 1400px;" stripe>
+        <el-table :data="filteredUsers" style="width: 100%; max-width: 1400px;" stripe>
             <!-- 序号列，自动编号 -->
             <el-table-column type="index" label="序号" width="50" align="center"></el-table-column>
             <!-- 用户名列，绑定到用户的 username 属性 -->
@@ -47,7 +46,7 @@
 
         <!-- 分页组件 -->
         <el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page="currentPage"
-            :page-size="pageSize" layout="total, prev, pager, next" :total="filteredUsers.length"
+            :page-size="pageSize" layout="total, prev, pager, next" :total="total"
             style="margin-top: 20px; text-align: center;"></el-pagination>
 
         <!-- 添加/编辑用户对话框 -->
@@ -168,7 +167,9 @@ export default {
             // 控制用户详情对话框的显示与隐藏
             detailsVisible: false,
             // 当前选中的用户
-            selectedUser: {}
+            selectedUser: {},
+            //总得数量
+            total: 0,
         };
     },
     async mounted() {
@@ -178,31 +179,47 @@ export default {
     computed: {
         // 过滤后的用户列表
         filteredUsers() {
-            return this.users.filter(user => user.username.includes(this.search))
-                .map(user => ({
-                    //使用 ...user 可以快速、简洁地创建一个新对象，包含原对象的所有属性，
-                    //同时允许你添加或覆盖某些属性。这样可以有效避免直接修改原对象，保持代码的可维护性。
-                    ...user,
-                    status: user.status == 1 ? '正常' : '已禁用'  //状态转换
-                }));
+            return this.users.map(user => ({
+                //使用 ...user 可以快速、简洁地创建一个新对象，包含原对象的所有属性，
+                //同时允许你添加或覆盖某些属性。这样可以有效避免直接修改原对象，保持代码的可维护性。
+                ...user,
+                status: user.status == 1 ? '正常' : '已禁用'  //状态转换
+            }));
         }
     },
     methods: {
-        //获取所有的用户信息
+        // 获取所有的用户信息
         async getUserAll() {
             try {
-                const response = await axios.get('http://localhost:8089/users/getUserAll'); //向发送GET请求
-                console.log("-----------------------------")
-                console.log(response.data)
-                this.users = response.data;  //将获取的数据赋值给users
+                // 使用 data 中的 currentPage ,search和 pageSize
+                const { currentPage, pageSize, search } = this;
+                const response = await axios.get('http://localhost:8089/users/getUserAll', { params: { currentPage, pageSize, search } });
+
+                console.log("-----------------------------");
+                console.log(response.data);
+                const res = response.data;
+
+                // 确保响应数据符合预期格式
+                if (res && Array.isArray(res.records)) {
+                    this.users = res.records;        // 用户数据列表
+                    this.total = res.total;          // 总记录数
+                    this.currentPage = res.current;  // 当前页码
+                } else {
+                    console.error('Unexpected response format:', res);
+                    this.users = [];                 // 确保 users 为空数组
+                    this.total = 0;
+                }
             } catch (error) {
-                console.error("获取用户数据失败！", error); //捕获并处理错误！
+                console.error("获取用户数据失败！", error);
+                this.users = [];
+                this.total = 0;
             }
         },
         // 搜索方法
         handleSearch() {
             // 触发搜索，重新计算过滤后的用户列表
             this.currentPage = 1;
+            this.getUserAll();
         },
         // 添加用户的方法
         handleAdd() {
@@ -285,7 +302,6 @@ export default {
                     phone: this.form.phone,
                     idCard: this.form.idCard,
                     // status: this.form.status,
-                    updatedAt: new Date().toLocaleString()
                 });
             }
 
@@ -298,9 +314,6 @@ export default {
         //增加用户信息并向服务器发起请求
         async addUser(userData) {
             try {
-                // console.log("-======================------------");
-                // console.log(userData);
-                // console.log("-======================------------");
                 const response = await axios.post('http://localhost:8089/users/addUser', userData);
                 if (response.status === 201) {   //201表示创建成功
 
@@ -347,10 +360,12 @@ export default {
         // 分页大小改变时的处理方法
         handleSizeChange(newSize) {
             this.pageSize = newSize;
+            this.getUserAll();  // 更新获取数据
         },
         // 当前页码改变时的处理方法
         handleCurrentChange(newPage) {
             this.currentPage = newPage;
+            this.getUserAll();  // 更新获取数据
         },
         // 查看用户详情的方法
         handleDetails(index, row) {
@@ -362,17 +377,15 @@ export default {
         // 切换用户状态的方法
         handleToggleStatus(index, row) {
 
-            //计算当前页的实际索引
-            const actualIndex = (this.currentPage - 1) * this.pageSize + index;
 
             // 根据当前状态决定新的状态，‘正常’变为‘禁用’，‘禁用’变为‘正常’
             const newStatus = row.status === '正常' ? '禁用' : '正常';
 
             // 更新本地用户数据中的状态
-            this.users[actualIndex].status = newStatus;
+            this.users[index].status = newStatus;
 
             // 更新最后修改时间
-            this.users[actualIndex].updatedAt = new Date().toLocaleString();
+            this.users[index].updatedAt = new Date().toLocaleString();
 
             // 提示信息，告知用户状态已切换
             this.$message({
@@ -382,7 +395,7 @@ export default {
             });
 
             // 调用更新用户状态的后端接口，保存修改到数据库
-            this.updateUserStatus(this.users[actualIndex]);
+            this.updateUserStatus(this.users[index]);
         },
 
         // 调用后端接口更新用户状态
