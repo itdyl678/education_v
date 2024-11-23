@@ -1,32 +1,40 @@
 <template>
   <div id="app">
-    <nav>
-      <router-link to="/">Home</router-link> |
-      <router-link to="/about">About</router-link>
-    </nav>
-    <router-view/>
+    <NavigationBar></NavigationBar>
+    <router-view />
+    <!-- 根据路由的 meta 字段判断是否显示页脚 -->
+    <Footer v-if="!$route.meta.hideFooter" /> <!-- 如果 hideFooter 为 false，显示页脚 -->
   </div>
 </template>
 
-<style lang="less">
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
+<script>
+import NavigationBar from './components/common/NavigationBar.vue';
+import Footer from './components/common/Footer.vue';
+export default {
+  name: 'App',
+  components: {
+    NavigationBar,
+    Footer
+  }
+}
+</script>
+
+<style scoped>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-nav {
-  padding: 30px;
+html,
+body {
+  height: 100%;
+  width: 100%;
+}
 
-  a {
-    font-weight: bold;
-    color: #2c3e50;
-
-    &.router-link-exact-active {
-      color: #42b983;
-    }
-  }
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 </style>
