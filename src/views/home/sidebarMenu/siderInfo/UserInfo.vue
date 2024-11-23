@@ -59,7 +59,8 @@
                 </el-form-item>
                 <!-- 密码输入框，显示为密码类型 -->
                 <el-form-item label="密码">
-                    <el-input v-model="form.password" placeholder="请输入密码" show-password></el-input>
+                    <el-input v-model="form.password" placeholder="请输入密码" show-password
+                        :disabled="isEditMode"></el-input>
                 </el-form-item>
                 <!-- 年龄输入框 -->
                 <el-form-item label="年龄">
@@ -121,7 +122,10 @@
                 <el-descriptions-item label="创建时间">{{ selectedUser.formattedCreatedAt }}</el-descriptions-item>
                 <el-descriptions-item label="用户状态">{{ selectedUser.status }}</el-descriptions-item>
                 <el-descriptions-item label="修改时间">{{ selectedUser.formattedUpdatedAt }}</el-descriptions-item>
-                <el-descriptions-item label="用户头像">{{ selectedUser.avatar }}</el-descriptions-item>
+                <!-- 修改用户头像显示 -->
+                <el-descriptions-item label="用户头像">
+                    <img :src="selectedUser.avatar" alt="用户头像" style="width: 100px; height: 100px;">
+                </el-descriptions-item>
             </el-descriptions>
         </el-dialog>
     </div>
@@ -139,6 +143,7 @@ export default {
             dialogVisible: false,
             // 对话框的标题
             dialogTitle: '',
+            isEditMode: false,  // 用于区分是编辑模式还是添加模式
             // 表单数据对象
             form: {
                 id: '',
@@ -225,6 +230,8 @@ export default {
         handleAdd() {
             // 设置对话框标题为“添加用户”
             this.dialogTitle = '添加用户';
+            // 设置编辑模式为 false，表示是新增用户
+            this.isEditMode = false;
             // 清空表单数据
             this.form = { username: '', password: '', age: '', gender: '', email: '', phone: '', idCard: '', createdAt: '', status: '' };
             // 设置当前编辑的用户索引为 -1（表示新增）
@@ -236,6 +243,8 @@ export default {
         handleEdit(index, row) {
             // 设置对话框标题为“编辑用户”
             this.dialogTitle = '编辑用户';
+            // 设置编辑模式为 true，表示是编辑已有用户
+            this.isEditMode = true;
             // 将当前行的数据复制到表单中
             this.form = { ...row };
             // 记录当前编辑的用户索引

@@ -3,14 +3,11 @@
     <Headers></Headers>
     <el-container>
       <el-container class="main-container">
-        <Sidebars @select="handleSidebarSelect" @update-path="setCurrentPath" /> <!-- 监听侧边栏选中事件 -->
+        <Sidebars />
         <el-container class="content-container">
           <MainHeaders :currentPath="currentPath"></MainHeaders> <!-- 当前路径标题 -->
           <el-main class="main-content">
-            <component :is="currentComponent"></component> <!-- 动态渲染组件 -->
-            <div v-if="!currentComponent">
-              <TableMain></TableMain>
-            </div> <!-- 占位符 -->
+            <router-view></router-view> <!--显示路由对应的组件-->
           </el-main>
         </el-container>
       </el-container>
@@ -30,7 +27,6 @@ export default {
   name: "Home",
   data() {
     return {
-      currentComponent: null, // 当前显示的组件
       currentPath: '' // 当前路径
     }
   },
@@ -43,25 +39,15 @@ export default {
     UserInfo,
     UserFeedBcak
   },
-
-  methods: {
-    handleSidebarSelect(index) {
-      // 根据选中的菜单项更新 currentComponent
-      switch (index) {
-        case 'user-info':
-          this.currentComponent = UserInfo; // 选择用户信息组件
-          break;
-        case 'user-feedback':
-          this.currentComponent = UserFeedBcak; // 选择用户反馈组件
-          break;
-        default:
-          this.currentComponent = null; // 默认情况
-      }
+  watch: {
+    // 监听路由变化，更新 currentPath
+    $route(to) {
+      this.currentPath = to.path;
     },
-    setCurrentPath(path) {
-      this.currentPath = path; // 更新当前路径
-    }
-  }
+  },
+  created() {
+    this.currentPath = this.$route.path;
+  },
 };
 </script>
 

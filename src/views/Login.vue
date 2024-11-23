@@ -82,7 +82,7 @@ export default {
             this.$refs[formName].resetFields();
         },
 
-        ...mapActions(['setUsername']),
+        ...mapActions(['setUsername', 'setAvatar']),
         async login() {
             try {
                 const loginData = {
@@ -95,20 +95,20 @@ export default {
                 console.log('Response data:', response.data);
 
                 if (response.status === 200) {
-                    const { token, name } = response.data; // 检查 response.data是否包含 token和name(必须和后端的属性格式一样)
+                    const { token, name, avatar } = response.data; // 检查 response.data是否包含 token和name(必须和后端的属性格式一样)
                     const username = name;  //取个别名
                     console.log('Token:', token); // 打印 token
                     console.log("############" + username);
+                    console.log("++++++++++++++" + avatar);
 
                     if (token) {
                         sessionStorage.setItem('token', token); // 保存 token 到 sessionStorage
-                        this.setUsername(username)  //更新Vuex状态
+                        this.setAvatar(avatar);
+                        this.setUsername(username)  //更新Vuex状态 ,保存用户名到 Vuex Store
                     } else {
                         console.error('Token is undefined or null'); // 处理 token 为 undefined 的情况
                     }
 
-                    // // 保存用户名到 Vuex Store
-                    // this.setUsername(username);
                     // 登录成功后，会重定向到用户管理页面
                     this.$router.push('/homes');
 

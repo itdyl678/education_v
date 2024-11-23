@@ -1,4 +1,3 @@
-// src/components/Headers.vue
 <template>
     <div>
         <el-header class="header1">
@@ -13,7 +12,8 @@
                         <i class="el-icon-bell"></i>
                     </span>
                     <span>
-                        <img src="../../../assets/image/OIP.jpg" alt="头像" class="avatar" />
+                        <!-- 获取后端传过来的头像 -->
+                        <img :src="avatar" alt="头像" class="avatar" />
                         <span> {{ username }} &nbsp; | </span>
                     </span>
                     <el-dropdown>
@@ -52,10 +52,17 @@ import { mapGetters } from 'vuex'; // 引入 mapGetters
 
 export default {
     name: 'Headers',
+    data() {
+        return {
+        };
+    },
     computed: {
-        ...mapGetters(['getUsername']), // 映射 getUsername getter
+        ...mapGetters(['getUsername', 'getAvatar']), // 映射 getUsername getter
         username() {
             return this.getUsername;
+        },
+        avatar() {
+            return this.getAvatar;
         }
     },
     methods: {
@@ -66,6 +73,7 @@ export default {
                 type: 'warning'
             }).then(() => {
                 sessionStorage.removeItem('token');  // 清除存储的 token
+                sessionStorage.removeItem('avatar');  //清除头像
                 this.$router.push('/login')
             }).catch(() => {
                 this.$message({

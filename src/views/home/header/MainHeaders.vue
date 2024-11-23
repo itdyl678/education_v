@@ -2,14 +2,16 @@
     <div class="main-header">
         <el-header>
             <div class="header-content">
-                <span class="home-text" @click="goHome">
-                    <i class="el-icon-s-data"></i>
-                    首页
-                    <i class="el-icon-arrow-right"></i>
-                </span>
-                <span class="path-text">
-                    {{ currentPath }}
-                </span>
+                <el-breadcrumb separator="/">
+                    <el-breadcrumb-item @click.native="goHome" class="breadcrumb-link">
+                        <i class="el-icon-s-home"></i>
+                        <span :class="{ 'home-text': true, 'home-clicked': homeClicked }">首页</span>
+                    </el-breadcrumb-item>
+                    <el-breadcrumb-item v-for="(item, index) in breadcrumbList" :key="index"
+                        :class="{ 'breadcrumb-link': item.clickable }" @click.native="navigateTo(item)">
+                        {{ item.meta.title }}
+                    </el-breadcrumb-item>
+                </el-breadcrumb>
             </div>
         </el-header>
     </div>
@@ -18,23 +20,59 @@
 <script>
 export default {
     name: 'MainHeaders',
-    props: {
-        currentPath: {
-            type: String,
-            default: ''
+    data() {
+        return {
+            breadcrumbList: [],
+            homeClicked: false, // 用于控制首页点击的视觉效果
+        };
+    },
+    watch: {
+        // 监听路由变化，更新面包屑
+        $route: {
+            immediate: true,
+            handler() {
+                this.updateBreadcrumb();
+            }
         }
     },
     methods: {
+        updateBreadcrumb() {
+            // 获取当前匹配的路由记录
+            const matched = this.$route.matched.filter(item => item.meta && item.meta.title);
+            this.breadcrumbList = matched.map((item, index) => {
+                return {
+                    path: item.path ? this.resolvePath(item.path) : '',
+                    meta: item.meta,
+                    clickable: index !== matched.length - 1  // 最后一项不可点击
+                };
+            });
+        },
+        resolvePath(path) {
+            // 处理相对路径，生成完整路径
+            let basePath = '';
+            for (let i = 1; i < this.$route.matched.length; i++) {
+                basePath += '/' + this.$route.matched[i].path;
+            }
+            return basePath;
+        },
         goHome() {
-            // 检查当前路由是否已是'/homes'
             if (this.$route.path !== '/homes') {
-                this.$router.push('/homes'); // 跳转到 homes 页面
+                this.$router.push('/homes');
             } else {
-                window.location.reload(); // 如果已经在'/homes'，则刷新页面
+                // 如果已经在首页，添加视觉效果
+                this.homeClicked = true;
+                setTimeout(() => {
+                    this.homeClicked = false;
+                }, 500); // 0.5秒后恢复
+            }
+        },
+        navigateTo(item) {
+            if (item.clickable) {
+                this.$router.push(item.path);
             }
         }
     }
-}
+};
 </script>
 
 <style scoped>
@@ -45,39 +83,46 @@ export default {
     align-items: center;
 }
 
-
-.home-text:hover {
-    color: rgb(139, 114, 241);
-    /* 鼠标悬停时改变颜色 */
-    transform: scale(1.1);
-    /* 鼠标悬停时放大 */
-}
-
 .header-content {
-    margin-top: 18px;
+    margin-top: 20px;
     align-items: center;
     height: 60px;
     padding-left: 20px;
 }
 
-.home-text {
-    font-size: 20px;
-    color: rgb(29, 28, 28);
-    letter-spacing: 1px;
+.breadcrumb-link {
     cursor: pointer;
-    /* 添加鼠标指针样式 */
-    transition: color 0.3s, transform 0.3s;
-    /* 添加过渡效果 */
-}
-
-.path-text {
-    font-size: 14px;
     color: #0851be;
     transition: color 0.3s;
-    cursor: pointer;
 }
 
-.path-text:hover {
+.breadcrumb-link:hover {
     color: rgb(139, 114, 241);
+}
+
+/* 首页文字样式 */
+.home-text {
+    transition: transform 0.3s;
+}
+
+.home-clicked {
+    animation: click-animation 0.5s;
+}
+
+@keyframes click-animation {
+    0% {
+        transform: scale(1);
+        color: #0851be;
+    }
+
+    50% {
+        transform: scale(1.2);
+        color: rgb(139, 114, 241);
+    }
+
+    100% {
+        transform: scale(1);
+        color: #0851be;
+    }
 }
 </style>

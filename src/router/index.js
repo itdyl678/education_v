@@ -1,8 +1,9 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import HomePage from '@/components/HomePage.vue'
 import Login from '@/views/Login.vue'
 import Home from '@/views/home/Home.vue'
+import UserInfo from '@/views/home/sidebarMenu/siderInfo/UserInfo.vue'
+import TableMain from '@/views/home/dataTable/TableMain.vue'
 
 Vue.use(VueRouter)
 
@@ -18,12 +19,26 @@ const routes = [
   {
     path: '/homes',
     component: Home,
-    meta: { requiresAuth: true }  // 添加元数据，表示需要身份验证
+    meta: { requiresAuth: true },  // 添加元数据，表示需要身份验证
+    children: [
+      {
+        path: '',  // 默认子路由，当访问 /homes 时
+        component: TableMain,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'user-info',  // 子路由，不需要加斜杠
+        name: 'UserInfo',
+        component: UserInfo,
+        meta: { requiresAuth: true, title: '用户信息' }
+      },
+
+    ]
   },
+  // 可以添加一个 404 页面或重定向
   {
-    path: '/homepage',
-    component: HomePage,
-    meta: { requiresAuth: true }  // 添加元数据，表示需要身份验证
+    path: '*',
+    redirect: '/homes'
   }
 ]
 

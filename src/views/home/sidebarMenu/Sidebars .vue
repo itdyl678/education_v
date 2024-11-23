@@ -1,18 +1,19 @@
 <template>
     <div class="sidebar">
         <el-menu :default-active="activeIndex" @select="handleSelect" background-color="rgb(68, 80, 102)"
-            text-color="#fff" active-text-color="#ffd04b" unique-opened>
+            text-color="#fff" active-text-color="yellow" unique-opened>
             <el-submenu index="1">
                 <template slot="title">
                     <i class="el-icon-user-solid main-menu-icon"></i>
                     <span class="main-menu-title">用户管理</span>
                 </template>
-                <el-menu-item index="user-info" class="sub-menu-item"
-                    @click="updatePath('用户管理', '用户信息')">用户信息</el-menu-item>
-                <el-menu-item index="user-feedback" class="sub-menu-item"
-                    @click="updatePath('用户管理', '用户反馈')">用户反馈</el-menu-item>
-                <el-menu-item index="option3" class="sub-menu-item">选项3</el-menu-item>
-                <el-menu-item index="option4" class="sub-menu-item">选项4</el-menu-item>
+                <router-link tag="el-menu-item" :to="{ path: '/homes/user-info' }" class="sub-menu-item">
+                    用户信息
+                </router-link>
+                <router-link tag="el-menu-item" :to="{ path: '/homes/user-feedback' }" class="sub-menu-item">
+                    用户反馈
+                </router-link>
+                <!-- 其他菜单项 -->
             </el-submenu>
             <el-submenu index="2">
                 <template slot="title">
