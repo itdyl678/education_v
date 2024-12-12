@@ -20,30 +20,41 @@
                     <i class="el-icon-reading main-menu-icon"></i>
                     <span class="main-menu-title">课程管理</span>
                 </template>
-                <el-menu-item index="course-option1" class="sub-menu-item">选项1</el-menu-item>
+                <el-menu-item index="course-option1" class="sub-menu-item">课程信息</el-menu-item>
                 <el-menu-item index="course-option2" class="sub-menu-item">选项2</el-menu-item>
-                <el-menu-item index="course-option3" class="sub-menu-item">选项3</el-menu-item>
-                <el-menu-item index="course-option4" class="sub-menu-item">选项4</el-menu-item>
             </el-submenu>
             <el-submenu index="3">
                 <template slot="title">
                     <i class="el-icon-video-play main-menu-icon"></i>
                     <span class="main-menu-title">视频管理</span>
                 </template>
-                <el-menu-item index="videos-option1" class="sub-menu-item">选项1</el-menu-item>
+                <el-menu-item index="videos-option1" class="sub-menu-item">视频信息</el-menu-item>
                 <el-menu-item index="videos-option2" class="sub-menu-item">选项2</el-menu-item>
-                <el-menu-item index="videos-option3" class="sub-menu-item">选项3</el-menu-item>
-                <el-menu-item index="videos-option4" class="sub-menu-item">选项4</el-menu-item>
             </el-submenu>
             <el-submenu index="4">
                 <template slot="title">
                     <i class="el-icon-s-comment main-menu-icon"></i>
                     <span class="main-menu-title">社区管理</span>
                 </template>
-                <el-menu-item index="community-option1" class="sub-menu-item">选项1</el-menu-item>
+                <el-menu-item index="community-option1" class="sub-menu-item">社区信息</el-menu-item>
                 <el-menu-item index="community-option2" class="sub-menu-item">选项2</el-menu-item>
-                <el-menu-item index="community-option3" class="sub-menu-item">选项3</el-menu-item>
-                <el-menu-item index="community-option4" class="sub-menu-item">选项4</el-menu-item>
+            </el-submenu>
+             <el-submenu index="5">
+                <template slot="title">
+                    <i class="el-icon-user-solid main-menu-icon"></i>
+                    <span class="main-menu-title">教师管理</span>
+                </template>
+                <el-menu-item index="community-option1" class="sub-menu-item">教师信息</el-menu-item>
+                <el-menu-item index="community-option2" class="sub-menu-item">选项2</el-menu-item>
+            </el-submenu>
+            <el-submenu index="4">
+                <template slot="title">
+                    <i class="el-icon-s-comment main-menu-icon"></i>
+                    <span class="main-menu-title">评论管理</span>
+                </template>
+                <el-menu-item index="community-option1" class="sub-menu-item">教师评论</el-menu-item>
+                <el-menu-item index="community-option2" class="sub-menu-item">课程评论</el-menu-item>
+                <el-menu-item index="community-option3" class="sub-menu-item">直播评论</el-menu-item>
             </el-submenu>
         </el-menu>
     </div>
