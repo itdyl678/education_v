@@ -91,7 +91,7 @@ export default {
     data() {
         return {
             subjects: ['全部', '数学', '英语', '物理', '化学', '生物', '计算机'],
-            titles: ['全部', '教授', '副教授', '讲师', '助教'],
+            titles: ['全部', '教授', '副教授', '讲师', '助教', '博士'],
             selectedSubject: '全部',
             selectedTitle: '全部',
             searchQuery: '',
@@ -99,10 +99,10 @@ export default {
                 // 示例教师数据，确保每个教师都有完整的属性
                 {
                     id: 1,
-                    name: '李老师',
+                    name: '李华',
                     title: '教授',
                     subject: '数学',
-                    photo: 'https://via.placeholder.com/200',
+                    photo: 'https://th.bing.com/th/id/R.5d2b2606b915e1b515b4ca613bae9d80?rik=%2fpiBP9yR5ORnsA&riu=http%3a%2f%2fwww.talkimages.cn%2fimages%2fmedium%2f20133087%2ftkf003_971308.jpg&ehk=e2K2AB6qP3guI6Km1CYSm7YGVo62kr4VLFvxzlSxo3I%3d&risl=&pid=ImgRaw&r=0',
                     description: '拥有20年教学经验，专注于高等数学的研究和教学。',
                     education: '清华大学数学系博士',
                     teachingSubjects: ['高等数学', '线性代数'],

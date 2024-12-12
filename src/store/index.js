@@ -9,6 +9,8 @@ export default new Vuex.Store({
     userName: '',
     userAvatar: '',
   },
+
+  //更改状态的方法
   mutations: {
     setUser(state, payload) {
       state.isLoggedIn = payload.isLoggedIn;
@@ -16,6 +18,8 @@ export default new Vuex.Store({
       state.userAvatar = payload.userAvatar;
     },
   },
+
+  //actions 处理业务逻辑，执行异步操作，并通过 commit 调用 mutations 来改变 state。
   actions: {
     login({ commit }, userData) {
       // 在登录成功后调用此方法
@@ -25,6 +29,7 @@ export default new Vuex.Store({
         userAvatar: userData.avatar,
       });
     },
+    //查看是否有token信息或者过期，用来免登录
     initializeStore({ commit }) {
       const token = localStorage.getItem('token');
       if (token) {

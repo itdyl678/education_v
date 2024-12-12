@@ -5,7 +5,7 @@
             <el-carousel :interval="5000" arrow="always" indicator-position="outside" height="400px"
                 class="carousel-content">
                 <el-carousel-item v-for="(item, index) in carouselImages" :key="index">
-                    <img :src="item" alt="Carousel Image" class="carousel-image" />
+                    <img :src="item" alt="Carousel Image" class="carousel-image" @click="checkurl()" />
                 </el-carousel-item>
             </el-carousel>
         </div>
@@ -39,7 +39,7 @@
             <el-row :gutter="20">
                 <el-col :span="6" v-for="(course, index) in featuredCourses" :key="index">
                     <el-card :body-style="{ padding: '0px' }" shadow="hover">
-                        <img :src="course.image" class="course-image" alt="Course Image" />
+                        <img :src="course.image" class="course-image" alt="Course Image" @click="goToCourseDetail()" />
                         <div style="padding: 14px;">
                             <h3>{{ course.title }}</h3>
                             <p>{{ course.description }}</p>
@@ -132,6 +132,26 @@ export default {
         purchase(course) {
             alert(`您选择了购买课程: ${course.title}`);
             // 这里可以添加实际的购买逻辑
+        },
+        goToCourseDetail() {
+            // 使用 Vue Router 跳转到课程详情页，并传递课程信息作为参数
+            this.$router.push('/courseDetail');
+        },
+        checkurl() {
+            const isLoggedIn = this.$store.state.isLoggedIn || localStorage.getItem('token');
+
+            if (isLoggedIn) {
+                // 如果已登录，跳转到课程页面
+                this.$router.push('/courses');
+            } else {
+                // 如果未登录，跳转到登录页面
+                this.$router.push('/login');
+                this.$message({
+                    message: '请先登录',
+                    type: 'warning',
+                    duration: 1500,
+                });
+            }
         }
     }
 };
@@ -160,6 +180,7 @@ export default {
     width: 100%;
     height: 400px;
     object-fit: cover;
+    cursor: pointer;
 }
 
 .carousel-wrapper::before,

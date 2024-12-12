@@ -26,7 +26,8 @@
                         <el-menu-item index="7-3"><router-link to="/option3">选项三</router-link></el-menu-item>
                     </el-submenu>
                     <!-- “我的”栏目 -->
-                    <el-menu-item index="8" v-if="isLoggedIn"><router-link to="/profile">我的</router-link></el-menu-item>
+                    <el-menu-item index="8" v-if="isLoggedIn"><router-link
+                            to="/personal">我的</router-link></el-menu-item>
                 </el-menu>
             </div>
 
@@ -108,16 +109,39 @@ export default {
         },
         handleCommand(command) {
             if (command === 'logout') {
-                this.logout();
+                this.confirmLogout();
             } else if (command === 'profile') {
-                this.$router.push('/profile');
+                if (this.$router.currentRoute.path !== '/personal') {
+                    this.$router.push('/personal');
+                }
             } else if (command === 'settings') {
-                this.$router.push('/settings');
+                if (this.$router.currentRoute.path !== '/settings') {
+                    this.$router.push('/settings');
+                }
             } else if (command === 'study-record') {
-                this.$router.push('/study-record');
+                if (this.$router.currentRoute.path !== '/study-record') {
+                    this.$router.push('/study-record');
+                }
             } else if (command === 'switch-account') {
                 this.switchAccount();
             }
+        },
+        confirmLogout() {
+            this.$confirm('您确定要退出登录吗？', '提示', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                type: 'warning',
+            })
+                .then(() => {
+                    this.logout(); // 用户确认后执行退出逻辑
+                })
+                .catch(() => {
+                    this.$message({
+                        type: 'info',
+                        message: '已取消退出',
+                        duration: 2000
+                    });
+                });
         },
         logout() {
             // 退出登录,清除本地存储中的信息
@@ -147,9 +171,34 @@ export default {
             // 实际应用中，您需要在这里实现语言切换的功能
         },
         switchAccount() {
-            // 切换账号逻辑
-            this.$message.info('切换账号');
-            // 实际应用中，您可以在这里实现切换账号的逻辑
+            // 切换账号时清除当前用户的信息
+            this.$confirm('是否切换到其他账户？', '切换账号', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                type: 'info',
+            })
+                .then(() => {
+                    // 清除本地存储的用户信息
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('username');
+                    localStorage.removeItem('avatar');
+
+                    // 更新 Vuex 状态为未登录状态
+                    this.$store.commit('setUser', {
+                        isLoggedIn: false,
+                        userName: '',
+                        userAvatar: '',
+                    });
+
+                    // 跳转到登录页面
+                    this.$router.push('/login');  // 假设你的登录页面路径是 '/login'
+
+                    // 提示用户
+                    this.$message.success('已切换账号，请重新登录');
+                })
+                .catch(() => {
+                    this.$message.info('取消切换账号');
+                });
         },
     },
 };
@@ -164,6 +213,18 @@ export default {
     height: 60px;
     display: flex;
     align-items: center;
+    overflow: hidden;
+    /* 超出部分隐藏 */
+    position: fixed;
+    /* 固定在页面顶部 */
+    top: 0px;
+    /* 距离顶部 0 */
+    left: 0;
+    /* 距离左侧 0 */
+    z-index: 1000;
+    /* 确保导航栏在页面其他元素之上 */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    /* 添加阴影以区分导航栏和内容 */
 }
 
 /* 导航栏内部容器样式 */
@@ -193,8 +254,7 @@ export default {
 /* Logo图片样式 */
 .logo {
     margin-top: 30px;
-    height: 250px;
-    /* 将Logo图片的高度调整为40像素 */
+    height: 240px;
 }
 
 /* 菜单容器样式 */
@@ -240,6 +300,7 @@ export default {
 .more-submenu .el-submenu__title {
     font-size: 16px;
 }
+
 
 /* 搜索框容器样式 */
 .search-container {

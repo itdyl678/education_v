@@ -64,17 +64,18 @@
                                         </el-input>
                                     </el-form-item>
                                     <el-form-item prop="verificationCode">
-                                        <el-input v-model="registerForm.verificationCode" placeholder="请输入验证码"
-                                            class="input-with-prefix-and-append">
-                                            <template slot="prefix">
-                                                <i class="el-icon-message"></i>
-                                            </template>
-                                            <template slot="append">
-                                                <el-button @click="sendVerificationCode" :loading="loading"
-                                                    size="small">获取验证码</el-button>
-                                            </template>
-                                        </el-input>
+                                        <div
+                                            style="display: flex; align-items: center; justify-content: space-between;">
+                                            <!-- 输入框部分 -->
+                                            <el-input v-model="registerForm.verificationCode" placeholder="请输入验证码"
+                                                style="flex: 1; margin-right: 10px;">
+                                            </el-input>
+                                            <!-- 验证码图片部分 -->
+                                            <img :src="captchaImageUrl" @click="refreshCaptcha" alt="验证码"
+                                                style="flex: 1; max-width: 50%; height: 40px; cursor: pointer;">
+                                        </div>
                                     </el-form-item>
+
                                     <el-form-item>
                                         <el-button type="primary" @click="handleRegister">注册</el-button>
                                     </el-form-item>
@@ -112,11 +113,11 @@ export default {
 
         // 验证码校验（6位数字）
         const validateCode = (rule, value, callback) => {
-            const codeRegex = /^\d{6}$/;
+            const codeRegex = /^\d{0,6}$/;
             if (!value) {
                 return callback(new Error('请输入验证码'));
             } else if (!codeRegex.test(value)) {
-                return callback(new Error('验证码为6位数字'));
+                return callback(new Error('验证码为0~6位数字'));
             } else {
                 callback();
             }
@@ -124,6 +125,9 @@ export default {
 
         return {
             activeTab: 'login', // 默认显示登录页面
+            // 验证码图片 URL
+            captchaImageUrl: '', // 初始化为空
+            captchaId: "", // 验证码 ID
             loginForm: {
                 username: '张三',
                 password: '123456',
@@ -158,30 +162,44 @@ export default {
                 ],
                 verificationCode: [
                     { required: true, validator: validateCode, trigger: 'blur' },
+                    {
+                        pattern: /^-?\d{1,6}$/,
+                        message: "验证码长为0到6位有效字符",
+                        trigger: "blur",
+                    },
                 ],
             },
             loading: false, // 控制验证码按钮的加载状态
         };
+    },
+    // 页面加载时自动获取验证码
+    mounted() {
+        this.refreshCaptcha();
     },
     methods: {
         // 切换登录和注册页面
         toggleTab(tab) {
             this.activeTab = tab;
         },
-        // 发送验证码（模拟发送）
-        sendVerificationCode() {
-            // 校验手机号是否正确
-            this.$refs.registerForm.validateField('phone', (valid) => {
-                if (valid) {
-                    this.loading = true;
-                    setTimeout(() => {
-                        this.loading = false;
-                        this.$message.success('验证码已发送');
-                    }, 2000);
-                } else {
-                    this.$message.error('请输入有效的手机号');
-                }
-            });
+        // 刷新验证码
+        async refreshCaptcha() {
+            try {
+                // 调用后端接口获取验证码图片
+                const response = await axios.get('http://localhost:8089/captcha/generate', {
+                    responseType: 'arraybuffer', // 确保接收的是二进制数据
+                });
+
+                // 从响应头中获取 captchaId 并保存
+                this.captchaId = response.headers['captcha-id'] || response.headers['Captcha-ID'];
+                console.log("获取到的captchaId:", this.captchaId);
+
+                // 转换图片为 Base64
+                const blob = new Blob([response.data], { type: 'image/jpeg' });
+                this.captchaImageUrl = URL.createObjectURL(blob); // 动态更新图片 URL
+            } catch (error) {
+                console.error('验证码刷新失败:', error);
+                this.$message.error('验证码加载失败，请稍后重试');
+            }
         },
         // 登录处理
         handleLogin() {
@@ -197,11 +215,18 @@ export default {
                         console.log('Response:', response);
                         //处理后端返回的结果，例如保存token
                         if (response.data.success) {
-                            this.$message.success('登录成功');
+                            this.$message({
+                                message: '登录成功',
+                                type: 'success',
+                                duration: 1500, // 显示时间设置为 1.5 秒
+                            });
                             //保存token到本地存储
+                            localStorage.setItem('id', response.data.data.id);
                             localStorage.setItem('token', response.data.data.token);
                             localStorage.setItem('username', response.data.data.name);
                             localStorage.setItem('avatar', response.data.data.avatar);
+
+                            console.log("hahhahaha---------------" + response.data.data.id);
 
 
                             this.$store.dispatch('login', {
@@ -225,15 +250,49 @@ export default {
             });
         },
         // 注册处理
-        handleRegister() {
-            this.$refs.registerForm.validate((valid) => {
+        async handleRegister() {
+            this.$refs.registerForm.validate(async (valid) => {
                 if (valid) {
-                    console.log('注册信息:', this.registerForm.username, this.registerForm.phone, this.registerForm.password, this.registerForm.verificationCode);
-                    // 模拟请求
-                    this.$message.success('注册成功');
+                    try {
+                        // 打印注册信息到控制台用于调试
+                        console.log("注册信息:", this.registerForm);
+
+                        // 调用后端注册接口
+                        const response = await axios.post(
+                            "http://localhost:8089/users/register",
+                            {
+                                username: this.registerForm.username,
+                                phone: this.registerForm.phone,
+                                password: this.registerForm.password,
+                                verificationCode: this.registerForm.verificationCode,
+                                captchaId: this.captchaId, // 确保 captchaId 被正确发送
+                            }
+                        );
+
+                        // 判断后端返回的数据
+                        if (response.data.success) {
+                            this.$message.success("注册成功");
+                            // 清空注册表单
+                            this.registerForm.username = "";
+                            this.registerForm.phone = "";
+                            this.registerForm.password = "";
+                            this.registerForm.verificationCode = "";
+
+                            // 跳转到登录页面
+                            this.toggleTab("login");
+                        } else {
+                            this.$message.error(response.data.message);
+                        }
+
+                    } catch (error) {
+                        console.error("注册失败:", error);
+                        this.$message.error("注册失败，请稍后重试");
+                    } finally {
+                        // 无论注册成功或失败，都刷新验证码
+                        this.refreshCaptcha();
+                    }
                 } else {
-                    this.$message.error('请检查输入信息');
-                    return false;
+                    this.$message.error("请检查输入信息");
                 }
             });
         },
