@@ -12,21 +12,35 @@
                 @keyup.enter.native="handleSearch"></el-input>
         </div>
 
-        <!-- 教师列表 -->
+        <!-- 教师列表或空状态提示 -->
         <div class="teacher-list">
-            <el-card v-for="teacher in displayedTeachers" :key="teacher.id" class="teacher-card"
-                :body-style="{ padding: '0px' }" @click.native="viewTeacherDetail(teacher)">
-                <div class="teacher-image">
-                    <img :src="teacher.photo" alt="Teacher Photo" />
+            <template v-if="displayedTeachers.length > 0">
+                <el-card v-for="teacher in displayedTeachers" :key="teacher.id" class="teacher-card"
+                    :body-style="{ padding: '0px' }" @click.native="viewTeacherDetail(teacher)">
+                    <div class="teacher-image">
+                        <img :src="teacher.photo" alt="Teacher Photo" />
+                    </div>
+                    <div class="teacher-info">
+                        <h3>{{ teacher.teacherName }}</h3>
+                        <p class="teacher-title">{{ teacher.title }}</p>
+                        <p class="teacher-subject">{{ teacher.subject }}</p>
+                        <p class="teacher-description">{{ teacher.description }}</p>
+                    </div>
+                </el-card>
+            </template>
+            <template v-else>
+                <!-- 使用 Element UI 的 el-empty 组件 -->
+                <el-empty description="没有符合筛选条件的教师" />
+                <!-- 或者使用自定义的提示信息和图片 -->
+                <!--
+                <div class="no-teachers">
+                    <img src="path/to/your/no-data-image.png" alt="No Data" class="no-data-image" />
+                    <p>没有符合筛选条件的教师。</p>
                 </div>
-                <div class="teacher-info">
-                    <h3>{{ teacher.name }}</h3>
-                    <p class="teacher-title">{{ teacher.title }}</p>
-                    <p class="teacher-subject">{{ teacher.subject }}</p>
-                    <p class="teacher-description">{{ teacher.description }}</p>
-                </div>
-            </el-card>
+                -->
+            </template>
         </div>
+
 
         <!-- 教师详情弹窗 -->
         <el-dialog :visible.sync="detailDialogVisible" :title="selectedTeacher.name" width="50%" class="teacher-dialog">
@@ -52,7 +66,7 @@
                         selectedTeacher.teachingSubjects &&
                         selectedTeacher.teachingSubjects.length
                     ">
-                        {{ selectedTeacher.teachingSubjects.join(', ') }}
+                        {{ selectedTeacher.teachingSubjects.split(',').join(', ') }}
                     </p>
                     <p v-else>暂无教学科目信息</p>
 
@@ -67,15 +81,15 @@
                     <h4>评分和评论</h4>
                     <el-rate v-model="userRating" @change="submitRating"></el-rate>
                     <el-input type="textarea" v-model="commentInput" placeholder="发表你的评论"></el-input>
-                    <el-button type="primary" @click="submitComment">发表评论</el-button>
+                    <el-button type="primary" style="margin-top: 10px;" @click="submitComment">发表评论</el-button>
                     <div class="comments-list">
                         <div v-for="comment in selectedTeacher.comments" :key="comment.id" class="comment-item">
-                            <el-avatar :src="comment.user.avatar"></el-avatar>
+                            <el-avatar :src="comment.userCommentDTO.avatar"></el-avatar>
                             <div class="comment-content">
-                                <span class="comment-user">{{ comment.user.name }}</span>
+                                <span class="comment-user">{{ comment.userCommentDTO.username }}</span>
                                 <el-rate :value="comment.rating" disabled></el-rate>
-                                <span class="comment-time">{{ formatDate(comment.time) }}</span>
-                                <p>{{ comment.content }}</p>
+                                <span class="comment-time">{{ formatDate(comment.createAt) }}</span>
+                                <p>{{ comment.comment }}</p>
                             </div>
                         </div>
                     </div>
@@ -86,6 +100,9 @@
 </template>
 
 <script>
+import axios from 'axios';
+import { mapActions } from 'vuex';
+
 export default {
     name: 'TeacherIndex', // 确保组件名称正确
     data() {
@@ -95,34 +112,7 @@ export default {
             selectedSubject: '全部',
             selectedTitle: '全部',
             searchQuery: '',
-            teachers: [
-                // 示例教师数据，确保每个教师都有完整的属性
-                {
-                    id: 1,
-                    name: '李华',
-                    title: '教授',
-                    subject: '数学',
-                    photo: 'https://th.bing.com/th/id/R.5d2b2606b915e1b515b4ca613bae9d80?rik=%2fpiBP9yR5ORnsA&riu=http%3a%2f%2fwww.talkimages.cn%2fimages%2fmedium%2f20133087%2ftkf003_971308.jpg&ehk=e2K2AB6qP3guI6Km1CYSm7YGVo62kr4VLFvxzlSxo3I%3d&risl=&pid=ImgRaw&r=0',
-                    description: '拥有20年教学经验，专注于高等数学的研究和教学。',
-                    education: '清华大学数学系博士',
-                    teachingSubjects: ['高等数学', '线性代数'],
-                    achievements: '出版多本教材，获得国家级教学奖项。',
-                    comments: [
-                        {
-                            id: 1,
-                            user: {
-                                name: '学生A',
-                                avatar: 'https://via.placeholder.com/40',
-                            },
-                            rating: 5,
-                            content: '李老师的课深入浅出，受益匪浅。',
-                            time: new Date(),
-                        },
-                        // 更多评论...
-                    ],
-                },
-                // 更多教师...
-            ],
+            teachers: [],
             displayedTeachers: [],
             detailDialogVisible: false,
             selectedTeacher: {
@@ -131,7 +121,7 @@ export default {
                 photo: '',
                 title: '',
                 subject: '',
-                description: '',
+                detail: '',
                 education: '',
                 teachingSubjects: [], // 初始化为空数组
                 achievements: '',
@@ -142,47 +132,65 @@ export default {
         };
     },
     methods: {
+        ...mapActions(['setTeacherId']), //引入setTeacherId action
         handleFilterChange() {
+            console.log('Filter changed!');
             this.filterTeachers();
         },
         handleSearch() {
             this.filterTeachers();
         },
         filterTeachers() {
+            // 检查是否有教师数据
+            if (!this.teachers || this.teachers.length === 0) {
+                console.log("没有可供筛选的教师数据。");
+                return;
+            }
+            console.log("正在根据筛选条件过滤教师...");
+            console.log("selectedSubject:", this.selectedSubject);
+            console.log("selectedTitle:", this.selectedTitle);
             this.displayedTeachers = this.teachers.filter((teacher) => {
                 const matchSubject =
-                    this.selectedSubject === '全部' ||
-                    teacher.subject === this.selectedSubject;
+                    this.selectedSubject === '全部' || teacher.subject === this.selectedSubject;
                 const matchTitle =
                     this.selectedTitle === '全部' || teacher.title === this.selectedTitle;
+
+                // 检查 teacher.teacherName 和 teacher.detail 是否有效
                 const matchSearch =
-                    teacher.name.includes(this.searchQuery) ||
-                    teacher.description.includes(this.searchQuery);
+                    (teacher.teacherName && teacher.teacherName.includes(this.searchQuery)) ||
+                    (teacher.detail && teacher.detail.includes(this.searchQuery));
+
                 return matchSubject && matchTitle && matchSearch;
             });
+            // 如果过滤结果为空，输出提示
+            if (this.displayedTeachers.length === 0) {
+                console.log("没有符合筛选条件的教师。");
+            } else {
+                console.log("筛选后的教师：", this.displayedTeachers);
+            }
         },
-        viewTeacherDetail(teacher) {
-            // 确保 selectedTeacher 有所有必要的属性
-            this.selectedTeacher = {
-                id: teacher.id || null,
-                name: teacher.name || '',
-                photo: teacher.photo || '',
-                title: teacher.title || '',
-                subject: teacher.subject || '',
-                description: teacher.description || '',
-                education: teacher.education || '',
-                teachingSubjects: teacher.teachingSubjects || [],
-                achievements: teacher.achievements || '',
-                comments: teacher.comments || [],
-            };
-            this.detailDialogVisible = true;
-            this.userRating = 0;
-            this.commentInput = '';
+
+
+        //点击查看教师详情
+        async viewTeacherDetail(teacher) {
+            this.setTeacherId(teacher.id); //点击教师时更新Vuex中的教师ID
+            try {
+                const response = await axios.get(`http://localhost:8089/teacher/${teacher.id}`); //根据教师id查询教师信息
+
+                console.log("教师的信息：", JSON.stringify(response.data, null, 2)); //null 是不替换任何键，2 代表每层缩进两个空格。
+                this.selectedTeacher = response.data.data.teacher;  //更新详情教师信息，包括评论
+                this.detailDialogVisible = true; //显示教师详情弹窗
+                this.userRating = 0;   //重置评分
+                this.commentInput = '';  //清空评论输入框
+            } catch (error) {
+                this.$message.error('获取教师详细信息失败');
+            }
+
         },
         submitRating(value) {
             this.userRating = value;
         },
-        submitComment() {
+        async submitComment() {
             if (!this.commentInput.trim()) {
                 this.$message.error('评论内容不能为空！');
                 return;
@@ -191,20 +199,53 @@ export default {
                 this.$message.error('请先给教师评分！');
                 return;
             }
+
+            //从状态管理器中获取用户的头像信息
+            const user = this.$store.state;
+            // console.log("用户名：" + user.userName);
+            // console.log("头像：" + user.userAvatar);
             const newComment = {
-                id: this.selectedTeacher.comments.length + 1,
                 user: {
-                    name: '当前用户',
-                    avatar: 'https://via.placeholder.com/40',
+                    name: user.userName,
+                    avatar: user.userAvatar,
                 },
+                userId: localStorage.getItem('id'),
+                teacherId: this.selectedTeacher.id, // 获取当前教师的 ID
                 rating: this.userRating,
-                content: this.commentInput,
-                time: new Date(),
+                comment: this.commentInput,
             };
-            this.selectedTeacher.comments.unshift(newComment);
-            this.commentInput = '';
-            this.userRating = 0;
-            this.$message.success('评论发表成功！');
+
+            try {
+                // 使用 axios 将评论数据提交到后端
+                const response = await axios.post(`http://localhost:8089/comments/saveComments`, newComment);
+                // 后端返回的评论数据包含自增的 id
+                const savedComment = response.data.data.comment;
+
+                // 格式化评论数据以匹配模板预期的结构
+                const formattedComment = {
+                    id: savedComment.id,
+                    userCommentDTO: {
+                        username: user.userName,
+                        avatar: user.userAvatar,
+                    },
+                    rating: savedComment.rating,
+                    comment: savedComment.comment,
+                    createAt: savedComment.createAt, // 根据后端字段调整
+                };
+                // 将返回的评论数据添加到评论列表中
+                this.selectedTeacher.comments.unshift(formattedComment);
+
+                // 清空评论输入框和评分
+                this.commentInput = '';
+                this.userRating = 0;
+
+                // 显示评论提交成功的提示
+                this.$message.success('评论发表成功！');
+
+            } catch (error) {
+                console.error('提交评论失败:', error);
+                this.$message.error('评论提交失败，请重试！');
+            }
         },
         formatDate(date) {
             if (!date) return '';
@@ -216,10 +257,23 @@ export default {
             const minute = ('0' + d.getMinutes()).slice(-2);
             return `${year}-${month}-${day} ${hour}:${minute}`;
         },
+
+        async fetchTeachers() {
+            try {
+                const response = await axios.get(`http://localhost:8089/teacher/getTeacherAll`);
+                console.log(response.data);
+                this.teachers = response.data.data.teacher;
+                console.log("更新后的教师数据：", this.teachers);  // 检查是否成功更新
+                // 确保初始化时也赋值给 displayedTeachers
+                this.displayedTeachers = [...this.teachers];  // 使用深拷贝避免引用传递
+            } catch (error) {
+                this.$message.error('加载教师数据失败');
+            }
+
+        }
     },
     mounted() {
-        // 初始化教师列表
-        this.displayedTeachers = this.teachers;
+        this.fetchTeachers();  //在组件加载时请求用户数据
     },
 };
 </script>
@@ -249,7 +303,7 @@ export default {
 .teacher-list {
     display: flex;
     flex-wrap: wrap;
-    justify-content: space-between;
+    justify-content: space-around;
 }
 
 .teacher-card {
