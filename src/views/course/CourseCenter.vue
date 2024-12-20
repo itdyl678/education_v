@@ -68,7 +68,8 @@
                 <el-card :body-style="{ padding: '0px' }" shadow="hover" class="animated-card"
                     :class="{ 'is-favorite': course.isFavorite }">
                     <div class="course-price" v-if="!course.isFree">¥{{ course.price }}</div>
-                    <img :src="course.img" class="course-image" alt="Course Image" />
+                    <img :src="course.img" class="course-image" alt="Course Image"
+                        @click="goToCourseDetail(course.id)" />
                     <div style="padding: 14px;">
                         <h3>{{ course.title }}</h3>
                         <div class="course-rating">
@@ -151,6 +152,10 @@ export default {
     methods: {
         handleSearch() {
             this.filterCourses();
+        },
+        goToCourseDetail(courseId) {
+            //使用Vue Router 跳转到课程详情页面，并传递课程ID
+            this.$router.push({ name: 'CourseDetail', params: { id: courseId } });
         },
         async fetchCourses() {
             try {
@@ -345,7 +350,7 @@ export default {
 
 .course-image {
     width: 100%;
-    height: 200px;
+    height: 180px;
     object-fit: cover;
 }
 
@@ -377,7 +382,9 @@ export default {
 }
 
 .animated-card {
+    margin-top: 20px;
     transition: transform 0.3s, box-shadow 0.3s;
+    background: linear-gradient(135deg, #c1a1f8, #85c3ff, #c1a1f8);
 }
 
 .animated-card:hover {
