@@ -1,31 +1,32 @@
 <template>
-    <div :class="['ai-tools', darkMode ? 'dark' : 'light']">
-        <header>
+    <div>
+        <header class="header">
             <h1>AI Tools</h1>
-            <div class="header-controls">
-                <el-select v-model="selectedService" placeholder="请选择AI服务" class="service-select">
-                    <el-option label="文本生成" value="text-generation"></el-option>
-                    <el-option label="翻译" value="translation"></el-option>
-                    <el-option label="问答" value="qa"></el-option>
-                </el-select>
-                <el-switch v-model="darkMode" active-text="暗模式" inactive-text="亮模式"></el-switch>
-            </div>
         </header>
         <div class="container">
             <aside class="sidebar">
                 <h2>最近的提问</h2>
                 <ul>
                     <li v-for="(record, index) in history" :key="index" @click="loadHistory(record)">
-                        <strong>{{ record.input }}</strong>
+                        <strong>{{ record.question }}</strong>
                     </li>
                 </ul>
             </aside>
             <main class="main-content">
                 <div class="result">
-                    <div v-if="loading" class="loading">加载中...</div>
+                    <div v-if="loading" class="loading">生成中...</div>
                     <div v-else>
                         <div v-for="(item, index) in chatHistory" :key="index" :class="['chat-item', item.type]">
-                            <div v-if="item.type === 'question'" class="question">{{ item.text }}</div>
+                            <div class="chat-item-header">
+                                <!-- <img v-if="item.type === 'question'" class="icon user-icon"
+                                    :src="$store.state.userAvatar" alt="User" /> -->
+                                <!-- <img v-else class="icon ai-icon" src="" alt="AI" /> -->
+                            </div>
+                            <div v-if="item.type === 'question'" class="question"><img v-if="item.type === 'question'"
+                                    class="icon user-icon" :src="$store.state.userAvatar" alt="User" />{{ item.question
+                                }}
+                            </div>
+                            <img v-else class="icon user-icon" src="../../assets/image/AIlog.png" alt="AI" />
                             <div v-if="item.type === 'answer'" class="answer" v-html="item.text"></div>
                         </div>
                     </div>
@@ -47,11 +48,12 @@
 </template>
 
 <script>
+import axios from 'axios';
 export default {
     data() {
         return {
             inputText: '',
-            selectedService: '',
+            // selectedService: '',
             result: '',
             loading: false,
             history: [],
@@ -59,35 +61,69 @@ export default {
             chatHistory: []
         };
     },
+    //加载时，向后端获取历史记录
+    async created() {
+        try {
+            const userId = this.$store.state.userId;
+            const response = await axios.get(`http://localhost:8089/api/get-history/${userId}`);
+            this.history = response.data.history || [];
+        } catch (error) {
+            console.error('获取历史记录失败:', error);
+        }
+    },
     methods: {
         onInput(value) {
             // 实时预览
             this.result = value;
         },
         async onSubmit() {
-            if (!this.inputText || !this.selectedService) {
-                this.$message.error('请确保输入内容和服务类型都已选择！');
+            if (!this.inputText) {
+                this.$message.error('输入的内容不能为空！');
                 return;
             }
+
+            // 1. 将用户问题立即显示在界面上
+            //   并且插入一个“AI 正在生成中...”的回答占位
             this.loading = true;
-            this.chatHistory.push({ type: 'question', text: this.inputText });
+            const questionItem = { type: 'question', question: this.inputText };
+            this.chatHistory.push(questionItem);
+
+            // 插入一个 “生成中” 占位回答
+            const inProgressAnswer = { type: 'answer', question: 'AI 正在生成中...' };
+            this.chatHistory.push(inProgressAnswer);
+            // 记录下这个占位回答所在的下标，后面好更新
+            const inProgressIndex = this.chatHistory.length - 1;
+
+            // 2. 清空输入框
+            const currentQuestion = this.inputText;  // 缓存一下，以防后面需要
+            this.inputText = '';
+
+            // 3. 调用后端接口
             try {
-                const response = await this.$axios.post('/api/ai-tools', {
-                    text: this.inputText,
-                    service: this.selectedService
+                const response = await axios.post('http://localhost:8089/api/ask-question', {
+                    //将用户的信息一同传入后端并存储于数据库中
+                    question: currentQuestion,
+                    userId: this.$store.state.userId,
+                    username: this.$store.state.userName
                 });
-                this.result = response.data.result;
-                this.chatHistory.push({ type: 'answer', text: this.result });
+
+                // 后端返回的真正答案
+                this.result = response.data.result || '（后端未返回结果）';
+
+                // 4. 将占位回答替换为真实回答
+                this.chatHistory[inProgressIndex].text = this.result;
+
+                // 记录进“历史问题”列表
                 this.history.unshift({
-                    input: this.inputText,
+                    input: currentQuestion,
                     result: this.result
                 });
-                if (this.history.length > 10) {
-                    this.history.pop();
-                }
+
             } catch (error) {
                 console.error('请求失败:', error);
                 this.$message.error('请求失败，请稍后再试。');
+                // 如果失败，可以更新占位回答为“生成失败”
+                this.chatHistory[inProgressIndex].text = 'AI生成失败，请稍后重试';
             } finally {
                 this.loading = false;
             }
@@ -129,38 +165,23 @@ export default {
             }
         },
         loadHistory(record) {
-            this.inputText = record.input;
-            this.result = record.result;
+            this.inputText = record.question;
+            this.result = record.answer;
             this.chatHistory = [
-                { type: 'question', text: record.input },
-                { type: 'answer', text: record.result }
+                { type: 'question', question: record.question },
+                { type: 'answer', text: record.answer }
             ];
-        }
+        },
     }
 };
 </script>
 
 <style scoped>
-.ai-tools {
-    padding: 20px;
-    transition: background-color 0.3s, color 0.3s;
-}
-
-.ai-tools.dark {
-    background-color: #333;
-    color: #fff;
-}
-
-.ai-tools.light {
-    background-color: #fff;
-    color: #333;
-}
-
 header {
     display: flex;
-    justify-content: space-between;
+    justify-content: space-around;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 1px;
 }
 
 .header-controls {
@@ -168,6 +189,7 @@ header {
     align-items: center;
     gap: 10px;
     /* 调整控件之间的间距 */
+
 }
 
 .service-select {
@@ -178,6 +200,14 @@ header {
 .container {
     display: flex;
     height: calc(100vh - 100px);
+    /* 线性渐变示例：从 120 度方向开始，三段淡色渐变 */
+    background: linear-gradient(120deg,
+            /* 起始为浅粉 */
+            #ffd8d8 0%,
+            /* 中间过渡到浅绿 */
+            #d8ffe4 50%,
+            /* 最后到浅蓝 */
+            #d8eeff 100%);
 }
 
 .sidebar {
@@ -198,16 +228,16 @@ header {
 .sidebar li {
     padding: 10px;
     cursor: pointer;
-    border-bottom: 1px solid #ccc;
+    border-bottom: 0px solid #ccc;
 }
 
 .sidebar li:hover {
-    background-color: #f0f0f0;
+    background-color: #268b93;
 }
 
 .main-content {
     flex-grow: 1;
-    padding: 20px;
+    padding: 50px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -237,14 +267,20 @@ header {
 }
 
 .chat-item.question {
-    background-color: #d4e6f1;
+    background-color: #cbefef;
     /* 浅蓝色背景 */
     color: #333;
 }
 
 .chat-item.answer {
-    background-color: #f0f0f0;
-    color: #333;
+    /* 线性渐变，从左到右，用蓝色平滑过渡到紫色 */
+    background: linear-gradient(to right,
+            /* 渐变方向：从左到右，也可改为角度如 120deg */
+            #cce0ff,
+            /* 浅蓝 (起始) */
+            #e6ccff
+            /* 淡紫 (结束) */
+        );
 }
 
 .answer {
@@ -265,5 +301,29 @@ header {
 .submit-button,
 .voice-button {
     margin-top: 10px;
+}
+
+.icon.user-icon {
+    width: 30px;
+    /* 控制头像的宽度 */
+    height: 30px;
+    /* 控制头像的高度，与宽度相同才是正圆 */
+    border-radius: 50%;
+    /* 圆角度数设为 50%，让头像显示成圆形 */
+    object-fit: cover;
+    /* 如果图片比例和容器不一致，cover让图片剪裁适应容器 */
+    margin-right: 8px;
+    /* 可以根据需要在文字与头像之间留一些间距 */
+}
+
+.header {
+    background: linear-gradient(120deg,
+            #ffdee2,
+            /* 粉色 */
+            #d7f9d7,
+            /* 绿色 */
+            #d9f2ff
+            /* 浅蓝 */
+        );
 }
 </style>

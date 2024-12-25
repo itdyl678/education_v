@@ -6,6 +6,7 @@ Vue.use(Vuex)
 export default new Vuex.Store({
   state: {
     isLoggedIn: false,
+    userId: '',
     userName: '',
     userAvatar: '',
     teacherId: null,
@@ -17,6 +18,7 @@ export default new Vuex.Store({
       state.isLoggedIn = payload.isLoggedIn;
       state.userName = payload.userName;
       state.userAvatar = payload.userAvatar;
+      state.userId = payload.userId;
     },
 
     setTeacherId(state, teacherId) {
@@ -32,6 +34,7 @@ export default new Vuex.Store({
         isLoggedIn: true,
         userName: userData.username,
         userAvatar: userData.avatar,
+        userId: userData.userId,
       });
     },
     //查看是否有token信息或者过期，用来免登录
@@ -42,6 +45,7 @@ export default new Vuex.Store({
           isLoggedIn: true,
           userName: localStorage.getItem('username'),
           userAvatar: localStorage.getItem('avatar'),
+          userId: localStorage.getItem('id'),
         });
       }
     },

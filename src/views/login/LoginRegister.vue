@@ -232,6 +232,7 @@ export default {
                             this.$store.dispatch('login', {
                                 username: response.data.data.name,
                                 avatar: response.data.data.avatar,
+                                userId: response.data.data.id,
                             });
 
                             //跳转到主页
