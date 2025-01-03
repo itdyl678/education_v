@@ -20,7 +20,9 @@
                     <i class="el-icon-reading main-menu-icon"></i>
                     <span class="main-menu-title">课程管理</span>
                 </template>
-                <el-menu-item index="course-option1" class="sub-menu-item">课程信息</el-menu-item>
+                <router-link tag="el-menu-item" :to="{ path: '/homes/course-Info' }" class="sub-menu-item">
+                    课程信息
+                </router-link>
                 <el-menu-item index="course-option2" class="sub-menu-item">选项2</el-menu-item>
             </el-submenu>
             <el-submenu index="3">
@@ -39,7 +41,7 @@
                 <el-menu-item index="community-option1" class="sub-menu-item">社区信息</el-menu-item>
                 <el-menu-item index="community-option2" class="sub-menu-item">选项2</el-menu-item>
             </el-submenu>
-             <el-submenu index="5">
+            <el-submenu index="5">
                 <template slot="title">
                     <i class="el-icon-user-solid main-menu-icon"></i>
                     <span class="main-menu-title">教师管理</span>

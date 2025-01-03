@@ -46,8 +46,9 @@
 
         <!-- 分页组件 -->
         <el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page="currentPage"
-            :page-size="pageSize" layout="total, prev, pager, next" :total="total"
-            style="margin-top: 20px; text-align: center;"></el-pagination>
+            :page-size="pageSize" layout="total, sizes, prev, pager, next, jumper" :page-sizes="[5, 10, 20, 50]"
+            :total="total" style="margin-top: 20px; text-align: center;">
+        </el-pagination>
 
         <!-- 添加/编辑用户对话框 -->
         <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="40%">
@@ -85,20 +86,6 @@
                 <el-form-item label="身份证号">
                     <el-input v-model="form.idCard" placeholder="请输入身份证号"></el-input>
                 </el-form-item>
-                <!-- 创建时间输入框 -->
-                <!-- <el-form-item label="创建时间">
-                    <el-input v-model="form.formattedCreatedAt" placeholder="请输入创建时间" readonly></el-input>
-                </el-form-item> -->
-                <!-- <el-form-item label="上传头像">
-                    <el-input v-model="form.avatar" palceholder="请输入头像"></el-input>
-                </el-form-item> -->
-                <!-- 用户状态选择框 -->
-                <!-- <el-form-item label="用户状态">
-                    <el-select v-model="form.status" placeholder="请选择用户状态">
-                        <el-option label="正常" value="正常"></el-option>
-                        <el-option label="禁用" value="禁用"></el-option>
-                    </el-select>
-                </el-form-item> -->
             </el-form>
             <!-- 对话框底部的操作按钮 -->
             <span slot="footer" class="dialog-footer">
@@ -167,6 +154,7 @@ export default {
             search: '',
             // 当前页码
             currentPage: 1,
+            tempPage: 1,  // 用于输入框的临时页码
             // 每页显示的条数
             pageSize: 5,
             // 控制用户详情对话框的显示与隐藏
@@ -207,7 +195,7 @@ export default {
                 // 确保响应数据符合预期格式
                 if (res && Array.isArray(res.records)) {
                     this.users = res.records;        // 用户数据列表
-                    this.total = res.total;          // 总记录数
+                    this.total = res.total;          // 总记录数,这些数据来源于mybatis-plus中自带的分页对象 IPage 包含的信息
                     this.currentPage = res.current;  // 当前页码
                 } else {
                     console.error('Unexpected response format:', res);
@@ -373,9 +361,11 @@ export default {
         },
         // 当前页码改变时的处理方法
         handleCurrentChange(newPage) {
-            this.currentPage = newPage;
+            this.tempPage = newPage; //更新临时页码
+            this.currentPage = newPage; //同步当前页码
             this.getUserAll();  // 更新获取数据
         },
+
         // 查看用户详情的方法
         handleDetails(index, row) {
             // 设置当前选中的用户
@@ -386,7 +376,6 @@ export default {
         // 切换用户状态的方法
         handleToggleStatus(index, row) {
 
-
             // 根据当前状态决定新的状态，‘正常’变为‘禁用’，‘禁用’变为‘正常’
             const newStatus = row.status === '正常' ? '禁用' : '正常';
 
@@ -394,7 +383,7 @@ export default {
             this.users[index].status = newStatus;
 
             // 更新最后修改时间
-            this.users[index].updatedAt = new Date().toLocaleString();
+            // this.users[index].updatedAt = new Date().toLocaleString();
 
             // 提示信息，告知用户状态已切换
             this.$message({

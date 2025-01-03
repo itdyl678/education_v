@@ -103,6 +103,8 @@ export default {
 
                     if (token) {
                         sessionStorage.setItem('token', token); // 保存 token 到 sessionStorage
+                        // sessionStorage.setItem('username', username);  //已经在vuex中做了处理
+                        // sessionStorage.setItem('avatar', avatar);
                         this.setAvatar(avatar);
                         this.setUsername(username)  //更新Vuex状态 ,保存用户名到 Vuex Store
                     } else {

@@ -5,7 +5,7 @@
                 <el-breadcrumb separator="/">
                     <el-breadcrumb-item @click.native="goHome" class="breadcrumb-link">
                         <i class="el-icon-s-home"></i>
-                        <span :class="{ 'home-text': true, 'home-clicked': homeClicked }">首页</span>
+                        <span :class="{ 'home-text': true, 'home-clicked': homeClicked }">首页（仪表盘）</span>
                     </el-breadcrumb-item>
                     <el-breadcrumb-item v-for="(item, index) in breadcrumbList" :key="index"
                         :class="{ 'breadcrumb-link': item.clickable }" @click.native="navigateTo(item)">

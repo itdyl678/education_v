@@ -4,6 +4,7 @@ import Login from '@/views/Login.vue'
 import Home from '@/views/home/Home.vue'
 import UserInfo from '@/views/home/sidebarMenu/siderInfo/UserInfo.vue'
 import TableMain from '@/views/home/dataTable/TableMain.vue'
+import CourseInfo from '@/views/home/sidebarMenu/siderInfo/CourseInfo.vue'
 
 Vue.use(VueRouter)
 
@@ -32,6 +33,12 @@ const routes = [
         component: UserInfo,
         meta: { requiresAuth: true, title: '用户信息' }
       },
+      {
+        path: 'course-info',
+        name: 'CourseInfo',
+        component: CourseInfo,  //课程信息路由
+        meta: { requiresAuth: true, title: '课程信息' }
+      }
 
     ]
   },
@@ -57,6 +64,7 @@ router.beforeEach((to, from, next) => {
   } else if (to.matched.some(record => record.meta.requiresAuth) && !isAuthenticated) {
     // 如果目标路由需要身份验证且用户没有 token，重定向到登录页面
     next('/login');
+    console.log('与服务器失联（token信息的缺失），无法登录')
   } else {
     // 否则放行
     next();
