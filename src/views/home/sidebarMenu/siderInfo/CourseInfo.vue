@@ -53,25 +53,21 @@
         <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="40%">
             <!-- 表单组件，绑定到 form 对象 -->
             <el-form :model="form" label-width="120px">
-
                 <el-form-item label="课程名">
                     <el-input v-model="form.title" placeholder="请输入课程名"></el-input>
                 </el-form-item>
-
                 <el-form-item label="价格">
                     <el-input v-model="form.price" placeholder="请输入价格"></el-input>
                 </el-form-item>
-
                 <el-form-item label="评分">
                     <el-input v-model.number="form.rating" placeholder="请输入评分"></el-input>
                 </el-form-item>
-
                 <el-form-item label="课程描述">
                     <el-input v-model.number="form.description" placeholder="请输入描述内容"></el-input>
                 </el-form-item>
                 <!-- 邮箱输入框 -->
                 <el-form-item label="详情">
-                    <el-input v-model="form.detail" placeholder="请输入课程详情"></el-input>
+                    <el-input v-model="form.detail" placeholder="请输入课程详情" type="textarea" :rows="8"></el-input>
                 </el-form-item>
             </el-form>
             <!-- 对话框底部的操作按钮 -->
@@ -85,15 +81,15 @@
 
         <!-- 用户详情对话框 -->
         <el-dialog title="课程详情" :visible.sync="detailsVisible" width="40%">
-            <el-descriptions title="" :column="2" border>
-                <el-descriptions-item label="课程名">{{ selectedCourse.coursename }}</el-descriptions-item>
+            <el-descriptions title="" :column="1" border>
+                <el-descriptions-item label="课程名">{{ selectedCourse.title }}</el-descriptions-item>
                 <el-descriptions-item label="教师ID">{{ selectedCourse.teacherId }}</el-descriptions-item>
-                <el-descriptions-item label="创建时间">{{ selectedCourse.createdTime }}</el-descriptions-item>
-                <el-descriptions-item label="修改时间">{{ selectedCourse.updatedTime }}</el-descriptions-item>
+                <el-descriptions-item label="创建时间">{{ selectedCourse.createTime }}</el-descriptions-item>
+                <el-descriptions-item label="修改时间">{{ selectedCourse.updateTime }}</el-descriptions-item>
                 <el-descriptions-item label="评分">{{ selectedCourse.rating }}</el-descriptions-item>
                 <el-descriptions-item label="课程类型">{{ selectedCourse.category }}</el-descriptions-item>
                 <el-descriptions-item label="价格">{{ selectedCourse.price }}</el-descriptions-item>
-                <el-descriptions-item label="报名人数">{{ selectedCourse.joincount }}</el-descriptions-item>
+                <el-descriptions-item label="报名人数">{{ selectedCourse.joinCount }}</el-descriptions-item>
                 <el-descriptions-item label="课程详情">{{ selectedCourse.detail }}</el-descriptions-item>
                 <el-descriptions-item label="学习目标">{{ selectedCourse.learningGoal }}</el-descriptions-item>
                 <!-- 修改用户头像显示 -->
@@ -131,7 +127,7 @@ export default {
                 category: '',  //课程类型
                 img: '',
                 price: '',
-                joincount: '',
+                joinCount: '',
                 courseStartTime: '',
                 detail: '',
                 learningGoal: '',
@@ -191,6 +187,37 @@ export default {
             }
 
         },
+
+        // 添加用户的方法
+        handleAdd() {
+            // 设置对话框标题为“添加课程信息”
+            this.dialogTitle = '添加课程信息';
+            // 设置编辑模式为 false，表示是新增课程
+            this.isEditMode = false;
+            // 清空表单数据
+            this.form = {
+                title: '', description: '', img: '', price: '',
+                detail: '', rating: '',
+
+            };
+            // 设置当前编辑的用户索引为 -1（表示新增）
+            this.currentIndex = -1;
+            // 显示对话框
+            this.dialogVisible = true;
+        },
+        // 编辑用户的方法
+        handleEdit(index, row) {
+            // 设置对话框标题为“编辑用户”
+            this.dialogTitle = '编辑课程';
+            // 设置编辑模式为 true，表示是编辑已有用户
+            this.isEditMode = true;
+            // 将当前行的数据复制到表单中
+            this.form = { ...row };
+            // 记录当前编辑的用户索引
+            this.currentIndex = index;
+            // 显示对话框
+            this.dialogVisible = true;
+        },
         // 搜索方法
         handleSearch() {
             // 触发搜索，重新计算过滤后的用户列表
@@ -207,6 +234,118 @@ export default {
             this.tempPage = newPage; //更新临时页码
             this.currentPage = newPage; //同步当前页码
             this.getCourseAll();  // 更新获取数据
+        },
+
+        // 查看用户详情的方法
+        handleDetails(index, row) {
+            // 设置当前选中的用户
+            this.selectedCourse = { ...row };
+            // 显示用户详情对话框
+            this.detailsVisible = true;
+        },
+        // 提交表单的方法
+        async handleSubmit() {
+            if (this.currentIndex === -1) {
+                //调用添加课程的异步函数
+                this.addCourse({
+                    title: this.form.title,
+                    description: this.form.description,
+                    price: this.form.price,
+                    rating: this.form.rating,
+                    detail: this.form.detail,
+                })
+
+            } else {
+                // 如果是编辑用户，更新用户数组中的异步函数
+                await this.updateCourse({
+                    id: this.courses[this.currentIndex].id,  //对应数据库中某条课程记录的主键 id
+                    title: this.form.title,
+                    description: this.form.description,
+                    price: this.form.price,
+                    rating: this.form.rating,
+                    detail: this.form.detail,
+                });
+            }
+            // 关闭对话框
+            this.dialogVisible = false;
+            // 重置当前页码
+            this.currentPage = 1;
+        },
+
+        //添加课程异步请求
+        async addCourse(CourseDate) {
+            try {
+                const response = await axios.post(`http://localhost:8089/course/addCourse`, CourseDate);
+                if (response.status === 201) {
+                    //从新获取课程信息
+                    await this.getCourseAll();
+
+                    this.$message({
+                        message: '课程添加成功',
+                        type: "success",
+                        duration: 1500
+                    })
+                }
+            } catch (error) {
+                this.$message({
+                    message: '课程添加失败!',
+                    type: 'error',
+                    duration: 1550
+                })
+            }
+        },
+        //修改课程信息
+        async updateCourse(CourseDate) {
+            try {
+                const response = await axios.put(`http://localhost:8089/course/updateCourse/${CourseDate.id}`, CourseDate);
+                if (response.status === 200) {
+                    await this.getCourseAll();
+                    this.$message({
+                        message: '修改成功!',
+                        type: 'success',
+                        duration: 2000
+                    })
+                }
+            } catch (error) {
+                this.$message({
+                    message: '课程修改失败！',
+                    type: 'error',
+                    duration: 2000
+                })
+            }
+
+        },
+
+        //删除课程信息
+        async handleDelete(index, row) {
+            // 弹出确认对话框
+            this.$confirm('此操作将永久删除该课程, 是否继续?', '提示', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                type: 'warning'
+            }).then(async () => {
+                // 确认删除后，从用户数组中移除该用户
+                try {
+                    const response = await axios.delete(`http://localhost:8089/course/${row.id}`); //调用后端删除接口
+                    if (response.status === 200) {
+                        this.courses.splice(index, 1);
+                        // 显示删除成功的消息
+                        this.$message({
+                            type: 'success',
+                            message: '删除成功!'
+                        });
+                        await this.getCourseAll(); //刷新用户列表
+                    }
+                } catch (error) {
+                    console.error("删除课程失败！", error);
+                }
+            }).catch(() => {
+                // 取消删除后，显示已取消删除的消息
+                this.$message({
+                    type: 'info',
+                    message: '已取消删除'
+                });
+            });
         },
     }
 }

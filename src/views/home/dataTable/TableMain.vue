@@ -90,15 +90,16 @@
 </template>
 
 <script>
+import axios from 'axios';
 import * as echarts from 'echarts'; // 引入 ECharts
 
 export default {
     name: 'TableMain',
     data() {
         return {
-            studentCount: 1200,
-            courseCount: 45,
-            teacherCount: 30,
+            studentCount: '',
+            courseCount: '',
+            teacherCount: '',
             feedbackCount: 150,
             enrollmentData: [200, 150, 280, 140, 320, 405], // 报名人数数据
             enrollmentLabels: ['1月', '2月', '3月', '4月', '5月', '6月'], // 标签
@@ -112,8 +113,29 @@ export default {
         this.initEnrollmentChart(); // 初始化课程报名情况图表
         this.initAgeDistributionChart(); // 初始化用户年龄分布图表
         this.initRegionDistributionChart(); // 初始化用户地区分布图表
+        this.getStudentCount(); //从后端获取学生总数
+        this.getCourseCount(); //从后端获取课程数量
+        this.getTeacherCount(); //从后端获取教师数量
     },
     methods: {
+        //获取用户总数
+        async getStudentCount() {
+            const response = await axios.get(`http://localhost:8089/users/getUserAll`);
+            this.studentCount = response.data.total
+        },
+
+        //获取课程总数
+        async getCourseCount() {
+            const response = await axios.get(`http://localhost:8089/course/getCourseAll`);
+            this.courseCount = response.data.total
+        },
+
+        //获取教师总数
+        async getTeacherCount() {
+            const response = await axios.get(`http://localhost:8089/teacher/getTeacherAll`);
+            this.teacherCount = response.data.data.total
+        },
+
         initEnrollmentChart() {
             const chartDom = this.$refs.enrollmentChart;
             const myChart = echarts.init(chartDom);
